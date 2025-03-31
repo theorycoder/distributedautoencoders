@@ -150,7 +150,7 @@ print('diff2: ',diff2)
 plt.gca().invert_xaxis()
 #plt.gca().invert_yaxis()
 plt.grid(True, which ="both")
-plt.title('Results Using the FastDP Library for $m=2$',fontsize=16)
+plt.title('Results Using BK and GC Based on FastDP for $m=2$',fontsize=16)
 plt.ylabel('accuracy',fontsize=20)
 plt.xlabel('privacy budget $\epsilon$',fontsize=20)
 plt.gca().legend(('non-private',
