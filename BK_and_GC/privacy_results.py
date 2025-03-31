@@ -153,12 +153,12 @@ plt.grid(True, which ="both")
 plt.title('Results Using BK and GC Based on FastDP for $m=2$',fontsize=16)
 plt.ylabel('accuracy',fontsize=20)
 plt.xlabel('privacy budget $\epsilon$',fontsize=20)
-plt.gca().legend(('non-private',
-				  'FM noiseless inputs',
-				  'FM noisy inputs, $\sigma=1$',
-				  'FM noisy inputs, $\sigma=5$',
-				  'DP-SGD noiseless inputs',
-				  'DP-SGD noisy inputs, $\sigma=5$'),loc="center",labelspacing=0.25)
+plt.gca().legend(('non-private (standard BP)',
+				  'FM noiseless inputs (BK)',
+				  'FM noisy inputs, $\sigma=1$ (BK)',
+				  'FM noisy inputs, $\sigma=5$ (BK)',
+				  'DP-SGD noiseless inputs (BK+GC)',
+				  'DP-SGD noisy inputs, $\sigma=5$ (BK+GC)'),loc="center", bbox_to_anchor=(0.5, 0.6), borderaxespad=0.,labelspacing=0.25)
 #plt.show()
 fig1.savefig('results.pdf', bbox_inches='tight')
 
