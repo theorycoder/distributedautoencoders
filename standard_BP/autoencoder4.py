@@ -116,7 +116,6 @@ def my_loss(W_dec, enc1_out, enc2_out, enc3_out, enc4_out, y_true, y_pred): #cus
 		f_ji1=math.log(2)
 		f_ji2=0.5-y_pred[:,i]
 		f_ji3=0.5*y_pred[:,i]-0.25 #: in y_pred is over all realizations of a user data
-		W_dec=W_dec +0.5 #improves numerical stability, otherwise weights are too small	
 
 		if app_sen_noise==1 and useb==1:
 		    scale_FM=scale_FM*b1
