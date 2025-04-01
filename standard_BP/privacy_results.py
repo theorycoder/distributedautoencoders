@@ -46,7 +46,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,14))
     FM_noiseless[i]=accuracy.mean(1)
 
-    #using delta_tildaFM, input noise sigma=1
     if i==0:
         accuracy=np.loadtxt("results/FMaccuracy_noisyInp_0_1_1.txt") 
     elif i==1:
@@ -64,7 +63,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,14))
     FM_noisy[i]=accuracy.mean(1)
     
-    #using delta_tildaFM, input noise sigma=5
     if i==0:
         accuracy=np.loadtxt("results/FMaccuracy_noisyInp_0_1_5.txt") 
     elif i==1:
@@ -82,7 +80,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,14))
     FM_noisy2[i]=accuracy.mean(1)
     
-    #dpsgd using custom loss, C=4, delta_sgd=2nlog2
     if i==0:
         accuracy=np.loadtxt("results/dpsgdaccuracy_0_1.txt") 
     elif i==1:
@@ -100,7 +97,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,14))
     dpsgd[i]=accuracy.mean(1)
     
-    #dpsgd using built-in loss, C=4, delta_sgd=2nlog2 without sensor noise
     if i==0:
         accuracy=np.loadtxt("results/dpsgdaccuracy_0_1_1_5.txt") 
     elif i==1:
@@ -118,7 +114,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,7))
     dpsgd2[i]=accuracy.mean(1)
     
-    #dpsgd using built-in loss, C=4, delta_sgd=2nlog2,
     if i==0:
         accuracy=np.loadtxt("results/dpsgdaccuracy_0_1_1_5.txt") #noiseless
     elif i==1:
@@ -136,25 +131,6 @@ for i in range(len(eps)):
     accuracy=array(accuracy).reshape((1,7))
     dpsgd3[i]=accuracy.mean(1)
 
-    '''
-    #using deltaFM
-    if i==0:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp00.txt") 
-    elif i==1:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp10.txt") 
-    elif i==2:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp20.txt") 
-    elif i==3:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp3.txt") 
-    elif i==4:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp4.txt") 
-    elif i==5:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp5.txt") 
-    elif i==6:
-        accuracy=np.loadtxt("results/FMaccuracy_noisyInp6.txt") 
-    accuracy=array(accuracy).reshape((1,7))
-    FM_noisy2[i]=accuracy.mean(1)
-    '''
     
 for i in range(len(eps)):
     accuracy=np.loadtxt("results/accuracy_nonprivate0.txt") 
