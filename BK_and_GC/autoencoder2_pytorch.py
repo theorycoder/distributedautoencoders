@@ -35,7 +35,7 @@ else:
     use_bm=1
 try:
     #I = int(input("Privacy budget index (0-6): ") or "0")  # default to 3
-    I=6
+    I=0
 except ValueError:
     print("Invalid input. Using default I=0")
     I = 0
@@ -60,7 +60,8 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
     device = y_pred.device
     sum1 = torch.tensor(0.0, device=device)
     sum2 = torch.tensor(0.0, device=device)
-
+    W_dec = W_dec + 2.5 #improves numerical stability, otherwise weights are too small
+    
     N = torch.normal(0, sen_noise_sig, size=(n,), device=device)
     #WN = torch.tensordot(W_enc1.T, N, dims=([0], [0]))  
     #bm = sum([math.exp(WN[i].item()) / (1 + (math.exp(WN[i].item()) - 1) * e1[0, i].item()) for i in range(len(WN))])
@@ -81,11 +82,11 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
     if app_sen_noise and use_bm:
         scale_FM *= bm
 
+    #perturb loss function using FM
     for i in range(n):
         f_ji1 = math.log(2)
         f_ji2 = 0.5 - y_pred[:, i]
         f_ji3 = 0.5 * y_pred[:, i] - 0.25
-        W_dec = W_dec + 0.5 #improves numerical stability, otherwise weights are too small
 
         a = torch.tensordot(e1, W_dec[0:l, i], dims=1)
         b = torch.square(torch.tensordot(e1, W_dec[0:l, i], dims=1))

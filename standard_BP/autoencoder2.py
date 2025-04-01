@@ -85,7 +85,7 @@ def my_loss(W_dec, enc1_out, enc2_out, y_true, y_pred): #custom loss has to be a
 	y_pred = tf.cast(y_pred, tf.float32)
 	sum1=tf.constant(0.)
 	sum2=tf.constant(0.)
-		
+	W_dec=W_dec+2.5 #improves numerical stability, otherwise weights are too small	
 	W_enc1=model.encoder1.w
 	#print('', np.shape(W_enc1))
 	#print('', np.shape(enc1_out[0,0]))
@@ -96,7 +96,7 @@ def my_loss(W_dec, enc1_out, enc2_out, y_true, y_pred): #custom loss has to be a
 	WN=np.zeros(len(enc1_out))
 	for i in range(len(enc1_out)):
 	    WN[i]=np.tensordot(W_enc1[0:int(n),i], N, axes=1)
-	print('WN: ',WN)
+	#print('WN: ',WN)
 	bm=0
 	for i in range(len(enc1_out)):
 	    b1i=math.exp(WN[i])/(1+(math.exp(WN[i])-1)*enc1_out[0,i])
@@ -106,11 +106,11 @@ def my_loss(W_dec, enc1_out, enc2_out, y_true, y_pred): #custom loss has to be a
 	scale_FM=(1.5*n)/(math.sqrt(2)*eps[I])
 	#print('scale_FM: ',scale_FM)
 	
+	#perturb loss function using FM
 	for i in range(n): 
 		f_ji1=math.log(2)
 		f_ji2=0.5-y_pred[:,i]
 		f_ji3=0.5*y_pred[:,i]-0.25 #: in y_pred is over all realizations of a user data
-		W_dec=W_dec +0.5 #improves numerical stability, otherwise weights are too small
 
 		if app_sen_noise==1 and use_bm==1:
 		    scale_FM=scale_FM*bm
@@ -146,6 +146,7 @@ loss_object = tf.losses.BinaryCrossentropy(from_logits=False)
 
 def compute_loss(model, x, x_hat):
 	W_dec=model.decoder.w
+	W_dec=W_dec +0.5 #improves numerical stability, otherwise weights are too small
 	#print('W_dec shape: ', W_dec.shape)
 	enc1_out = model.encoder1(x).numpy()
 	enc2_out = model.encoder2(x).numpy()
