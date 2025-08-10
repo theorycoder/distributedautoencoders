@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 EPS_INDEX = "4"  # ε = 10
-NUM_RUNS = 10    # Number of Monte Carlo runs per constant
-NUM_WORKERS = 5 # Number of parallel workers
+NUM_RUNS = 5    # Number of Monte Carlo runs per constant
+NUM_WORKERS = 4 # Number of parallel workers
 
-# Define constants to test
-constants = np.linspace(0.0, 2.5, 5)
+#constants = np.linspace(0.0, 2.5, 5)
+constants = np.linspace(0.0, 5, 5)
 
 def run_one_trial(c, run_id):
     env = os.environ.copy()

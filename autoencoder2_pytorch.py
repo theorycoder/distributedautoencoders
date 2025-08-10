@@ -17,23 +17,29 @@ import time
 C = 4
 n = 14
 l = 7
-tot_data_sz = 456
+tot_data_sz = 36480 #36480, 9120, 456- large, medium, small data
 num_user = 2
-privacy_mode = 'nonprivate'  # ← CHANGE this to 'fm' or 'dpsgd' as needed
+#privacy_mode = 'nonprivate'  # ← CHANGE this to 'PALM' or 'dpsgd' as needed
 #privacy_mode = 'dpsgd' 
-#privacy_mode = 'fm' 
+privacy_mode = 'PALM' 
+#privacy_mode = 'FM' 
 
 # Defaults
 use_custom_loss = 0
 app_FM_DP = 0
 dpsgd = 0
-app_sen_noise = 0
-sen_noise_sig = 1 #make this 1 for DP-SGD if app_sen_noise=0 
+app_sen_noise = 1
+sen_noise_sig = 5 #make this 1 for DP-SGD if app_sen_noise=0 
 use_bm = 1
+use_const=1
 
-if privacy_mode == 'fm':
+if privacy_mode == 'PALM':
     use_custom_loss = 1
     app_FM_DP = 1
+elif privacy_mode == 'FM':
+    use_custom_loss = 1
+    app_FM_DP = 1
+    use_const=0
 elif privacy_mode == 'dpsgd':
     dpsgd = 1
     use_custom_loss = 1
@@ -44,11 +50,11 @@ elif privacy_mode == 'nonprivate':
     use_custom_loss = 0
     app_FM_DP = 0
 else:
-    raise ValueError("Invalid privacy_mode. Choose from 'nonprivate', 'fm', or 'dpsgd'.")
+    raise ValueError("Invalid privacy_mode. Choose from 'nonprivate', 'PALM', or 'dpsgd'.")
 
 use_bm=1
 try:
-    #I = int(input("Privacy budget index (0-6): ") or "0")  # command line input
+    #I = int(input("Privacy budget index (0-4): ") or "0")  # command line input
     I = int(sys.argv[1]) if len(sys.argv) > 1 else 0 #for one thread use command: for r in {1..14}; do for i in {0..4}; do python3 autoencoder2_pytorch.py $i; done; done   use run.sh  
     #I=0 #manually pick one values of I using command: for i in {1..14}; do python3 autoencoder2_pytorch.py; done
     #I = int(os.getenv("EPS_INDEX", "0")) #run using weight constant sweep
@@ -58,8 +64,8 @@ except ValueError:
 
 #gradlog_filename = f"gradlog_I{I}.txt"
 
-#eps = [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4]
-eps = [0.001, 0.01, 0.1, 1.0, 10.0] #0.0018, 0.0032, 0.0056, 
+#eps = [0.000001]
+eps = [0.01, 0.1, 1.0, 10.0, 20] 
 
 
 class DA(nn.Module):
@@ -79,10 +85,25 @@ class DA(nn.Module):
 
 def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
     device = y_pred.device
-    const_val = float(os.getenv("DECODER_CONST", "2.5"))
+    const_val = use_const*float(os.getenv("DECODER_CONST", "2.5"))
     #if app_FM_DP:
+    #W_dec = W_dec + const_val
+    
+    # Define coefficients from least-squares fit
+    #a_fit = 0.01# 
+    #b_fit = 0.7207# 0.7604 
+    
+    #a_fit=0.01449275
+    #b_fit=0.71037826
+    
+    a_fit = 0.0125
+    b_fit = 0.8 #0.7149
+    
+    # Compute constant from epsilon
+    #const_val = a_fit * np.log(eps[I] + 1e-3) + b_fit
+    #print(f"ε = {eps[I]:.3f} → const_val ≈ {const_val:.3f}")
     W_dec = W_dec + const_val
-    #W_dec = W_dec + 2.5 #improves SNR of loss function coefficients
+
 
     # --- Compute bm ---
     N = torch.normal(0, sen_noise_sig, size=(n,), device=device)
@@ -98,12 +119,12 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
     if const_val>0:
         e1b=e1*const_val
         cj=torch.sum(e1b)
-        scale_FM+= n*cj*(0.5*cj+2)
+        scale_FM+= n*cj*(0.5*cj+2)/ (math.sqrt(2) * eps[I])
 
     # --- Shared terms ---
-    f_ji1 = math.log(2)
-    f_ji2 = 0.5 - y_pred.squeeze()
-    f_ji3 = 0.5 * y_pred.squeeze() - 0.25
+    alpha_ji1 = math.log(2)
+    alpha_ji2 = 0.5 - y_pred.squeeze()
+    alpha_ji3 = 0.5 * y_pred.squeeze() - 0.25
 
     # --- Vectorized computations for both users ---
     a1 = torch.matmul(e1, W_dec[0:l, :])    # shape: [n]
@@ -113,25 +134,28 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
     b2 = a2 ** 2
 
     if app_FM_DP:
-        noise = torch.distributions.Laplace(0, scale_FM).sample([n]).to(device)
+        noise1 = torch.distributions.Laplace(0, scale_FM).sample([n]).to(device)
+        noise2 = torch.distributions.Laplace(0, scale_FM).sample([n]).to(device)
         if app_sen_noise:
-            f_ji2=f_ji2*bm
-            f_ji3=f_ji3*bm
-        sum1 = torch.sum(f_ji1 + (f_ji2 + noise) * a1 + (f_ji3 + noise) * b1)
-        sum2 = torch.sum(f_ji1 + (f_ji2 + noise) * a2 + (f_ji3 + noise) * b2)
+            alpha_ji2=alpha_ji2*bm
+            alpha_ji3=alpha_ji3*bm
+        sum1 = torch.sum(alpha_ji1 + (alpha_ji2 + noise1) * a1 + (alpha_ji3 + noise1) * b1)
+        sum2 = torch.sum(alpha_ji1 + (alpha_ji2 + noise2) * a2 + (alpha_ji3 + noise2) * b2)
     elif dpsgd==1:
-        f_ji2=f_ji2*bm
-        f_ji3=f_ji3*bm
-        sum1 = torch.sum(f_ji1 + f_ji2 * a1 + f_ji3 * b1)
-        sum2 = torch.sum(f_ji1 + f_ji2 * a2 + f_ji3 * b2)
+        alpha_ji2=alpha_ji2*bm
+        alpha_ji3=alpha_ji3*bm
+        sum1 = torch.sum(alpha_ji1 + alpha_ji2 * a1 + alpha_ji3 * b1)
+        sum2 = torch.sum(alpha_ji1 + alpha_ji2 * a2 + alpha_ji3 * b2)
     else:
-        sum1 = torch.sum(f_ji1 + f_ji2 * a1 + f_ji3 * b1)
-        sum2 = torch.sum(f_ji1 + f_ji2 * a2 + f_ji3 * b2)
+        sum1 = torch.sum(alpha_ji1 + alpha_ji2 * a1 + alpha_ji3 * b1)
+        sum2 = torch.sum(alpha_ji1 + alpha_ji2 * a2 + alpha_ji3 * b2)
     
     return sum1 + sum2
 
 
-with open('fitbit_dataset.json') as f:
+#with open('fitbit_dataset.json') as f:
+#with open('fitbit_dataset_expanded_20x.json') as f:
+with open('fitbit_dataset_expanded_80x.json') as f:
     inp = np.array(json.load(f))
 
 inp = np.reshape(inp, (tot_data_sz, n)).astype(np.float32)
@@ -192,7 +216,7 @@ for i in range(X.size(0)):  # X.size(0) gives the number of samples
     bm_values.append(bm)
 bm_tensor = torch.tensor(bm_values)
 bm = bm_tensor.mean()
-print('bm: ',bm)
+#print('bm: ',bm)
 
 if dpsgd==1:
     scale_dpsgd=(n+2*n*C)/(2*eps[I])
@@ -259,9 +283,13 @@ print(f"Accuracy (1 - MSE): {acc:.6f}")
 
 if dpsgd == 1:
     filename = f"dpsgdaccuracy_{I}_{use_custom_loss}_{app_sen_noise}_{sen_noise_sig}.txt"
-elif app_sen_noise==1:
+elif app_sen_noise==1 and privacy_mode=='PALM':
+    filename = f"PALMaccuracy_noisyInp_{I}_{use_bm}_{sen_noise_sig}.txt"
+elif app_sen_noise == 0 and use_custom_loss == 1 and app_FM_DP == 1 and privacy_mode=='PALM':
+    filename = f"PALMaccuracy_noislessInp_{I}.txt"
+elif app_sen_noise==1 and privacy_mode=='FM':
     filename = f"FMaccuracy_noisyInp_{I}_{use_bm}_{sen_noise_sig}.txt"
-elif app_sen_noise == 0 and use_custom_loss == 1 and app_FM_DP == 1:
+elif app_sen_noise == 0 and use_custom_loss == 1 and app_FM_DP == 1 and privacy_mode=='FM':
     filename = f"FMaccuracy_noislessInp_{I}.txt"
 elif privacy_mode=='nonprivate':
     filename = f"nonprivate_{I}.txt"
@@ -272,7 +300,9 @@ if privacy_mode=='nonprivate':
     filename = f"nonPrivate_time_{I}_{use_custom_loss}_{app_sen_noise}_{sen_noise_sig}.txt"
 elif privacy_mode=='dpsgd':
     filename = f"dpsgd_time_{I}_{use_custom_loss}_{app_sen_noise}_{sen_noise_sig}.txt"
-elif privacy_mode=='fm':
+elif privacy_mode=='PALM':
+    filename = f"PALM_time_{I}_{use_custom_loss}_{app_sen_noise}_{sen_noise_sig}.txt"
+elif privacy_mode=='FM':
     filename = f"fm_time_{I}_{use_custom_loss}_{app_sen_noise}_{sen_noise_sig}.txt"
 with open(filename, 'a') as f:
     f.write(str(tot_time) + " ")
