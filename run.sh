@@ -1,8 +1,8 @@
-#!/bin/bash
-
 for i in {0..4}; do
   echo "Running epsilon index I=$i..."
-  parallel -j 6 "python3 autoencoder2_pytorch.py $i {}" ::: {1..10}
+  for sim in {1..30}; do
+    echo "  Simulation $sim for I=$i..."
+    python3 DP_DA.py "$i" "$sim"
+  done
 done
-
 

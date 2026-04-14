@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use("Agg")  
 
 import numpy as np
+import pandas as pd
 import time
 import math
 from numpy import array
@@ -20,7 +21,7 @@ start_time = time.time()
 from scipy.interpolate import make_interp_spline
 
 #eps=[0.001, 0.01, 0.1, 1.0, 10.0] #use the results2 folder
-eps=[0.01, 0.1, 1.0, 10, 20]
+eps=[0.1, 0.2, 0.4, 0.8, 1.6]
 FM_noisy=np.zeros(len(eps))
 FM_noisy2=np.zeros(len(eps))
 FM_noiseless=np.zeros(len(eps))
@@ -40,55 +41,55 @@ PALM_time=np.zeros(len(eps))
 
 # --- Load FM accuracy ---
 for i in range(len(eps)):
-    accuracy=np.loadtxt(f"results/FMaccuracy_noislessInp_{i}.txt") 
+    accuracy=np.loadtxt(f"results_2/FMaccuracy_noislessInp_{i}.txt") 
     FM_noiseless[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    #accuracy=np.loadtxt(f"results/FMaccuracy_noisyInp_{i}_1_1.txt") 
+    #accuracy=np.loadtxt(f"results_2/FMaccuracy_noisyInp_{i}_1_1.txt") 
     #FM_noisy[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    accuracy=np.loadtxt(f"results/FMaccuracy_noisyInp_{i}_1_5.txt") 
+    accuracy=np.loadtxt(f"results_2/FMaccuracy_noisyInp_{i}_1_5.txt") 
     FM_noisy2[i]=array(accuracy).reshape(1, -1).mean(1)
 
 # --- Load DPSGD accuracy ---
 for i in range(len(eps)):
-    accuracy=np.loadtxt(f"results/dpsgdaccuracy_{i}_1_0_1.txt") 
+    accuracy=np.loadtxt(f"results_2/dpsgdaccuracy_{i}_1_0_1.txt") 
     dpsgd2[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    accuracy=np.loadtxt(f"results/dpsgdaccuracy_{i}_1_1_5.txt") 
+    accuracy=np.loadtxt(f"results_2/dpsgdaccuracy_{i}_1_1_5.txt") 
     dpsgd3[i]=array(accuracy).reshape(1, -1).mean(1) 
 
 # --- Load Non-private ---
 for i in range(len(eps)):
-    accuracy=np.loadtxt("results/nonprivate_0.txt") 
+    accuracy=np.loadtxt("results_2/nonprivate_0.txt") 
     nonprivate[i]=array(accuracy).reshape(1, -1).mean(1)
 
 # --- Load time: non-private ---
-for i in range(len(eps)):
-    time_=np.loadtxt(f"results/nonPrivate_time_{i}_0_0_1.txt") 
+for i in range(1):
+    time_=np.loadtxt(f"results_2/nonPrivate_time_{i}_1_1_5.txt") 
     nonprivate_time[i]=array(time_).reshape(1, -1).mean(1)
 
 # --- Load time: FM ---
 for i in range(len(eps)):
-    time_=np.loadtxt(f"results/fm_time_{i}_1_0_1.txt") 
+    time_=np.loadtxt(f"results_2/FM_time_{i}_1_0_5.txt") 
     FM_time[i]=array(time_).reshape(1, -1).mean(1)
 
 # --- Load time: DPSGD ---
 for i in range(len(eps)):
-    time_=np.loadtxt(f"results/dpsgd_time_{i}_1_0_1.txt") 
+    time_=np.loadtxt(f"results_2/dpsgd_time_{i}_1_0_1.txt") 
     dpsgd_time[i]=array(time_).reshape(1, -1).mean(1)
 
 # --- Load PALM results ---
 for i in range(len(eps)):
-    accuracy=np.loadtxt(f"results/PALMaccuracy_noislessInp_{i}.txt")
+    accuracy=np.loadtxt(f"results_2/PALMaccuracy_noislessInp_{i}.txt")
     PALM_noiseless[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    #accuracy=np.loadtxt(f"results/PALMaccuracy_noisyInp_{i}_1_1.txt")
+    #accuracy=np.loadtxt(f"results_2/PALMaccuracy_noisyInp_{i}_1_1.txt")
     #PALM_noisy[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    accuracy=np.loadtxt(f"results/PALMaccuracy_noisyInp_{i}_1_5.txt")
+    accuracy=np.loadtxt(f"results_2/PALMaccuracy_noisyInp_{i}_1_5.txt")
     PALM_noisy2[i]=array(accuracy).reshape(1, -1).mean(1)
 
-    time_=np.loadtxt(f"results/PALM_time_{i}_1_0_1.txt")
+    time_=np.loadtxt(f"results_2/PALM_time_{i}_1_0_5.txt")
     PALM_time[i]=array(time_).reshape(1, -1).mean(1)
 
 # --- Optional debug prints ---
@@ -120,22 +121,41 @@ plt.plot(
 )
 
 plt.xticks(x_indices, eps)
-plt.ylim([0.37, 1])
+plt.ylim([0.7, 1])
 plt.gca().invert_xaxis()
 plt.grid(True, which="both")
 plt.ylabel('accuracy', fontsize=16)
 plt.xlabel('privacy budget $\epsilon$', fontsize=16)
 plt.gca().legend((
-    'non-private (standard BP)',
-    'FM noiseless inputs (BK)',
-    #'FM noisy inputs, $\sigma=1$ (BK)',
-    'FM noisy inputs, $\sigma=5$ (BK)',
-    'DP-SGD noiseless inputs (BK+GC)',
-    'DP-SGD noisy inputs, $\sigma=5$ (BK+GC)',
-    'SPOF noiseless inputs (BK)',
-    #'PALM noisy inputs, $\sigma=1$ (BK)',
-    'SPOF noisy inputs, $\sigma=5$ (BK)'
+    'non-private',
+    'FM noiseless inputs',
+    #'FM noisy inputs, $\sigma=1$',
+    'FM noisy inputs, $\sigma=5$',
+    'DP-SGD noiseless inputs',
+    'DP-SGD noisy inputs, $\sigma=5$',
+    'SPOF noiseless inputs',
+    #'PALM noisy inputs, $\sigma=1$',
+    'SPOF noisy inputs, $\sigma=5$'
 ), loc="center", bbox_to_anchor=(0.325, 0.2), borderaxespad=0., labelspacing=0.25)
 
 fig1.savefig('results.pdf', bbox_inches='tight')
 
+# Average ONLY times
+FM_time_avg = FM_time
+DPSGD_time_avg = dpsgd_time
+PALM_time_avg = PALM_time
+NonPrivate_time_avg = nonprivate_time
+
+# Build table
+table = np.vstack([
+    eps,
+    FM_time_avg,
+    DPSGD_time_avg,
+    PALM_time_avg,
+    NonPrivate_time_avg
+])
+
+df = pd.DataFrame(
+    table,
+    index=["epsilon", "FM", "DPSGD", "PALM", "NonPrivate"]
+)

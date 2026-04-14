@@ -17,11 +17,11 @@ import time
 C = 4
 n = 14
 l = 7
-tot_data_sz = 36480 #36480, 9120, 456- large, medium, small data
+#tot_data_sz = 36480 #36480, 9120, 456- large, medium, small data
 num_user = 2
 #privacy_mode = 'nonprivate'  # ← CHANGE this to 'PALM' or 'dpsgd' as needed
-#privacy_mode = 'dpsgd' 
-privacy_mode = 'PALM' 
+privacy_mode = 'dpsgd' 
+#privacy_mode = 'PALM' 
 #privacy_mode = 'FM' 
 
 # Defaults
@@ -54,8 +54,8 @@ else:
 
 use_bm=1
 try:
-    #I = int(input("Privacy budget index (0-4): ") or "0")  # command line input
-    I = int(sys.argv[1]) if len(sys.argv) > 1 else 0 #for one thread use command: for r in {1..14}; do for i in {0..4}; do python3 autoencoder2_pytorch.py $i; done; done   use run.sh  
+    I = int(input("Privacy budget index (0-4): ") or "0")  # command line input
+    #I = int(sys.argv[1]) if len(sys.argv) > 1 else 0 #for one thread use command: for r in {1..14}; do for i in {0..4}; do python3 autoencoder2_pytorch.py $i; done; done   use run.sh  
     #I=0 #manually pick one values of I using command: for i in {1..14}; do python3 autoencoder2_pytorch.py; done
     #I = int(os.getenv("EPS_INDEX", "0")) #run using weight constant sweep
 except ValueError:
@@ -123,8 +123,8 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
 
     # --- Shared terms ---
     alpha_ji1 = math.log(2)
-    alpha_ji2 = 0.5 - y_pred.squeeze()
-    alpha_ji3 = 0.5 * y_pred.squeeze() - 0.25
+    alpha_ji2 = 0.5 - y_true.squeeze()
+    alpha_ji3 = 0.5 * y_true.squeeze() - 0.25
 
     # --- Vectorized computations for both users ---
     a1 = torch.matmul(e1, W_dec[0:l, :])    # shape: [n]
@@ -158,9 +158,10 @@ def my_loss(W_dec, e1, e2, y_true, y_pred, W_enc1):
 with open('fitbit_dataset_expanded_80x.json') as f:
     inp = np.array(json.load(f))
 
-inp = np.reshape(inp, (tot_data_sz, n)).astype(np.float32)
+inp = np.reshape(inp, (-1, n)).astype(np.float32)
 for i in range(n):
     inp[:, i] /= np.max(inp[:, i])
+tot_data_sz = inp.shape[0]
 
 X = inp.copy()
 noise1 = np.random.laplace(0, 1, (tot_data_sz, n)).astype(np.float32)
@@ -203,13 +204,13 @@ def findbm(model, x, sen_noise_sig, n):
 
 
 
-
 # ----- Training -----
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = DA().to(device)
 optimizer = optim.Adam(model.parameters())
 rnidx = torch.randint(n, (1,))
 bm_values = []
+
 for i in range(X.size(0)):  # X.size(0) gives the number of samples
     sample = X[i]  # Extract the i-th sample
     bm = findbm(model, sample, sen_noise_sig, n)  # Compute bm for the sample
@@ -219,7 +220,7 @@ bm = bm_tensor.mean()
 #print('bm: ',bm)
 
 if dpsgd==1:
-    scale_dpsgd=(n+2*n*C)/(2*eps[I])
+    scale_dpsgd=(n+2*n*C)/(2*eps[I]) #division by 2 due to average of 1 and 2C
     if use_bm==1:
         scale_dpsgd=(n*bm+2*n*C)/(2*eps[I])
     privacy_engine = PrivacyEngine(model, batch_size=1, sample_size=len(train_set), epochs=10, target_epsilon=eps[I], noise_multiplier=scale_dpsgd, clipping_fn='Abadi', clipping_mode='ghost', clipping_style='all-layer',
